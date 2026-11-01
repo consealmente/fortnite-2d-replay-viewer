@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const REPLAY_DIR = path.join(process.env.VERCEL ? '/tmp' : path.join(__dirname, '..', 'data'), 'replays');
+const REPLAY_DIR = path.join(__dirname, '..', 'data', 'replays');
 
 /**
  * Downloads a replay by its code (the 32-char session/match id, the same thing

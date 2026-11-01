@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Trimmed from the upstream FortniteReplayDecompressor repo. Applies to the vendored
+    parser projects under src/ only (MSBuild walks up from each .csproj to the nearest
+    Directory.Build.props). The bridge project has its own settings and is unaffected.
+    See UPSTREAM_COMMIT.txt for the exact commit these sources were taken from, plus the
+    local patches applied on top (build-41 pawn movement, packet-overflow guards, demo
+    frame time exposure).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Copyright>Copyright © 2020-2026 Shiqan</Copyright>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS8618;CS8601;CS8602;CS8603;CS8604;CS8625;CS0618</NoWarn>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

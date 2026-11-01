@@ -1,0 +1,103 @@
+diff --git a/src/Unreal.Core/NetFieldParser.cs b/src/Unreal.Core/NetFieldParser.cs
+index a31b22c..365c8fc 100644
+--- a/src/Unreal.Core/NetFieldParser.cs
++++ b/src/Unreal.Core/NetFieldParser.cs
+@@ -333,7 +333,20 @@ public class NetFieldParser
+             RepLayoutCmdType.RepMovement => netFieldInfo.MovementAttribute != null ? netBitReader.SerializeRepMovement(
+                 locationQuantizationLevel: netFieldInfo.MovementAttribute.LocationQuantizationLevel,
+                 rotationQuantizationLevel: netFieldInfo.MovementAttribute.RotationQuantizationLevel,
+-                velocityQuantizationLevel: netFieldInfo.MovementAttribute.VelocityQuantizationLevel) : netBitReader.SerializeRepMovement(),
++                velocityQuantizationLevel: netFieldInfo.MovementAttribute.VelocityQuantizationLevel)
++                // Actors that declare ReplicatedMovement without a [RepMovement] attribute (PlayerPawn,
++                // PlayerPawnAI, pickups, supply drops, ...) take this default branch. Fortnite build 41.00
++                // (++Fortnite+Release-41.00) widened their rotation quantization from ByteComponents
++                // (8 bits/axis) to ShortComponents (16 bits/axis). It carries no EngineNetworkVersion bump
++                // (still 44, as in 40.x), so detect the build from the replay Changelist/Branch. Reading the
++                // old byte rotation on a 41.00 pawn under-consumes the rotation field, misaligns the trailing
++                // velocity vector, and trips the RepMovement group into Incompatible -- dropping all pawn
++                // movement for the rest of the replay. Attributed actors (the branch above) are unaffected.
++                : netBitReader.SerializeRepMovement(
++                    rotationQuantizationLevel: (netBitReader.NetworkReplayVersion != null
++                        && (netBitReader.NetworkReplayVersion.Changelist >= 54618515u
++                            || (netBitReader.NetworkReplayVersion.Branch?.Contains("+Release-41.") ?? false)))
++                        ? RotatorQuantization.ShortComponents : RotatorQuantization.ByteComponents),
+             _ => ReadDataType(netFieldInfo.Attribute.Type, netBitReader, netFieldInfo.PropertyInfo.PropertyType),
+         };
+ 
+diff --git a/src/Unreal.Core/ReplayReader.cs b/src/Unreal.Core/ReplayReader.cs
+index 659dd08..c89190a 100644
+--- a/src/Unreal.Core/ReplayReader.cs
++++ b/src/Unreal.Core/ReplayReader.cs
+@@ -55,6 +55,14 @@ public abstract class ReplayReader<T> where T : Replay, new()
+     protected ILogger _logger;
+     protected T Replay { get; set; }
+     protected ParseMode _parseMode;
++
++    /// <summary>
++    /// Wall-clock time (seconds since the replay started recording) of the demo frame currently being
++    /// processed. Set at the top of <see cref="ReadDemoFrameIntoPlaybackPackets"/> so downstream
++    /// <see cref="OnExportRead"/> handlers can timestamp per-tick data (player positions etc.). The engine
++    /// does not thread this value onto exports itself; it is only available at the frame level.
++    /// </summary>
++    protected float DemoFrameTimeSeconds;
+     protected bool IsDebugMode => _parseMode == ParseMode.Debug;
+ 
+     protected NetGuidCache _netGuidCache;
+@@ -515,6 +523,10 @@ public abstract class ReplayReader<T> where T : Replay, new()
+         _cmdReader.EngineNetworkVersion = header.EngineNetworkVersion;
+         _cmdReader.NetworkVersion = header.NetworkVersion;
+         _cmdReader.ReplayHeaderFlags = header.Flags;
++        // Thread the replay Changelist/Branch onto the command reader so the RepMovement call site can
++        // detect build 41.00, which widened pawn rotation quantization Byte->Short. EngineNetworkVersion
++        // is 44 on both 40.x and 41.x and cannot discriminate; NetworkReplayVersion (set above) can.
++        _cmdReader.NetworkReplayVersion = archive.NetworkReplayVersion;
+     }
+ 
+ 
+@@ -815,6 +827,7 @@ public abstract class ReplayReader<T> where T : Replay, new()
+         }
+ 
+         var timeSeconds = archive.ReadSingle();
++        DemoFrameTimeSeconds = timeSeconds;
+         _logger?.LogDebug("ReadDemoFrameIntoPlaybackPackets at {}", timeSeconds);
+ 
+         if (archive.NetworkVersion >= NetworkVersionHistory.HISTORY_LEVEL_STREAMING_FIXES)
+@@ -1282,6 +1295,19 @@ public abstract class ReplayReader<T> where T : Replay, new()
+         {
+             var repObject = ReadContentBlockPayload(bunch, out var bObjectDeleted, out var bHasRepLayout, out var payload);
+ 
++            // Infinite-loop guard (matches UE UActorChannel::ProcessBunch, which checks Bunch.IsError()
++            // immediately after ReadContentBlockPayload). A desynced/overrun content block leaves the
++            // archive errored with its read position frozen below the end (BitReader no-ops further reads
++            // once IsError is set), so AtEnd() never trips and the `payload is null` continue below spins
++            // forever — observed hanging the full 180s parse timeout on certain build-41 replays. The
++            // IsError check farther down was unreachable in that path because the null-payload continue
++            // fired first.
++            if (bunch.Archive.IsError)
++            {
++                _logger?.LogWarning("UActorChannel::ProcessBunch: ReadContentBlockPayload errored; aborting bunch {}", bunchIndex);
++                break;
++            }
++
+             if (payload is null)
+             {
+                 continue;
+@@ -2091,6 +2117,18 @@ public abstract class ReplayReader<T> where T : Replay, new()
+                 bunch.Archive = bitReader;
+             }
+ 
++            // If the bunch claims to be larger than the data remaining in the packet, the stream is
++            // malformed/misaligned. Both ReadBits (partial) and SetTempEnd (non-partial) flag this by
++            // setting IsError without advancing the reader. Continuing would corrupt the temp-end
++            // bookkeeping and spin this loop forever, so bail out of the packet like the engine does
++            // in UNetConnection::ReceivedPacket when Reader.IsError() is true after FInBunch::SetData
++            // (Engine/Source/Runtime/Engine/Private/NetConnection.cpp, same source as the links above).
++            if (bitReader.IsError)
++            {
++                _logger?.LogWarning("ReceivedPacket: bunch ({bunchDataBits} bits) overflows packet {packetIndex}, aborting packet.", bunchDataBits, packetIndex);
++                break;
++            }
++
+             bunchIndex++;
+ 
+             if (bunch.bHasPackageMapExports)
