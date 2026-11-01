@@ -37,6 +37,8 @@ async function downloadReplay(code, onProgress = () => {}) {
     eventCount: 1000,
     dataCount: 1000,
     checkpointCount: 1000,
+    // Avoid unbounded parallel chunk buffers and network requests.
+    maxConcurrentDownloads: Math.max(1, Math.min(4, Number(process.env.REPLAY_DOWNLOAD_CONCURRENCY) || 2)),
     updateCallback: (data) => {
       const parts = [data.header, data.dataChunks, data.eventChunks, data.checkpointChunks].filter(Boolean);
       const total = parts.reduce((a, p) => a + (p.max || 0), 0);
