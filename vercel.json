@@ -1,8 +1,7 @@
 {
   "functions": {
-    "api/index.js": {
-      "includeFiles": "bridge/published/**",
-      "maxDuration": 300
+    "server.js": {
+      "includeFiles": "bridge/published/**"
     }
   }
 }
