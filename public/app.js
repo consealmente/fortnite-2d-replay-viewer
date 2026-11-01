@@ -44,6 +44,18 @@ let mapReady = false;
    ------------------------------------------------------------------------- */
 let loadingCode = null;
 
+async function readApiJson(response) {
+  const body = await response.text();
+  let data;
+  try { data = JSON.parse(body); } catch (_) {
+    throw new Error(response.ok
+      ? 'The replay server returned an invalid response.'
+      : 'The replay server failed (HTTP ' + response.status + '). It may have reached its memory or execution limit.');
+  }
+  if (!response.ok) throw new Error(data.error || 'Replay server failed (HTTP ' + response.status + ').');
+  return data;
+}
+
 async function startLoad(rawCode) {
   const code = String(rawCode || '').trim().toLowerCase().replace(/[^0-9a-f]/g, '');
   if (!/^[0-9a-f]{32}$/.test(code)) {
@@ -61,12 +73,12 @@ async function startLoad(rawCode) {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ code }),
     });
-    const j = await r.json();
+    const j = await readApiJson(r);
     if (!r.ok) throw new Error(j.error || 'request failed');
 
     // Poll
     for (;;) {
-      const s = await fetch(`/api/replays/${code}/status`).then((x) => x.json());
+      const s = await fetch(`/api/replays/${code}/status`).then(readApiJson);
       setLoading(s.progress, phaseLabel(s));
       if (s.status === 'done') break;
       if (s.status === 'error') throw new Error(s.error || 'parse failed');
@@ -74,7 +86,7 @@ async function startLoad(rawCode) {
     }
 
     setLoading(100, 'Loading model…');
-    const m = await fetch(`/api/replays/${code}/model`).then((x) => x.json());
+    const m = await fetch(`/api/replays/${code}/model`).then(readApiJson);
     m.__code = code;
     enterViewer(m);
   } catch (err) {
