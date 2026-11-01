@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "build-bridge": "dotnet build bridge/bridge.csproj -c Release",
-    "update-map": "node scripts/update-map.mjs"
+    "update-map": "node scripts/update-map.mjs",
+    "postinstall": "node scripts/patch-downloader-cache.js"
   },
   "dependencies": {
     "express": "^4.21.2",
