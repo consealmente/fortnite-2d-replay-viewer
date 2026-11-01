@@ -1,0 +1,17 @@
+{
+  "name": "fortnite-2d-replay-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web-based 2D replay viewer for Fortnite: paste a replay code, watch players move on the map with storm circles and timers.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build-bridge": "dotnet build bridge/bridge.csproj -c Release",
+    "update-map": "node scripts/update-map.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "fortnite-replay-downloader": "^3.0.8",
+    "sortablejs": "^1.15.6"
+  }
+}

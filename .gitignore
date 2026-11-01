@@ -1,0 +1,15 @@
+node_modules/
+data/replays/*.replay
+data/parsed/*.json
+
+# build output
+bridge/bin/
+bridge/obj/
+vendor/parser/src/**/bin/
+vendor/parser/src/**/obj/
+
+# parser debug dumps (only emitted by Debug builds; the app uses Release)
+**/cmds/
+**/*.dump
+**/failed-properties
+*.log

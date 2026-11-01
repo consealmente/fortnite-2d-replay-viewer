@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: fortnite-2d-replay-viewer
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: PUBLIC_WEBSITE
+        value: '1'
+      - key: MAX_ACTIVE_REPLAYS
+        value: '3'
+      - key: REPLAY_REQUESTS_PER_HOUR
+        value: '30'
+    disk:
+      name: replay-cache
+      mountPath: /app/data
+      sizeGB: 10
