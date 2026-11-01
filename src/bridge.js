@@ -90,6 +90,7 @@ function runBridge(replayPath, onProgress = () => {}) {
       if (code !== 0) {
         cleanup();
         if (lastError) {
+          console.error('Replay parser exception:', lastError.type, lastError.error, lastError.stack);
           reject(new Error(`Replay parse failed: ${lastError.error}`));
           return;
         }
