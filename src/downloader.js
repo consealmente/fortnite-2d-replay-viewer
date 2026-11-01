@@ -12,7 +12,7 @@ const { baseDataUrl } = require('fortnite-replay-downloader/constants');
 const REPLAY_DIR = path.join(process.env.VERCEL ? '/tmp' : path.join(__dirname, '..', 'data'), 'replays');
 const int32 = n => { const b=Buffer.allocUnsafe(4); b.writeInt32LE(n); return b; };
 const str = s => { const b=Buffer.from(String(s || ''), 'utf8'); return Buffer.concat([int32(String(s || '').length + 1),b,Buffer.from([0])]); };
-async function write(out, data) { if (!out.write(data)) await once(out,'drain'); }
+async function write(out, data) { out.logicalPosition=(out.logicalPosition||0)+data.length; if (!out.write(data)) await once(out,'drain'); }
 async function copyUrl(out,url) {
   const response = await fetch(url, {headers:{'User-Agent':'Tournament replay downloader'}});
   if (!response.ok || !response.body) throw new Error('Replay chunk download failed: HTTP '+response.status);
@@ -41,7 +41,7 @@ async function downloadReplay(code,onProgress=()=>{}) {
       const url=links[name]?.readLink;
       if (!url) throw new Error('Missing replay chunk '+name);
       // The 8-byte chunk header stores type and payload size. Reserve and patch size.
-      const chunkStart=out.bytesWritten;
+      const chunkStart=out.logicalPosition||0;
       await write(out,int32(kind));
       await write(out,int32(0));
       if(kind===1) {
@@ -61,7 +61,7 @@ async function downloadReplay(code,onProgress=()=>{}) {
       onProgress(Math.round((i+1)/parts.length*100));
       // Flush each chunk before patching its actual payload length.
       if (!out.write(Buffer.alloc(0))) await once(out,'drain');
-      const payloadSize=out.bytesWritten-chunkStart-8;
+      const payloadSize=(out.logicalPosition||0)-chunkStart-8;
       // Store patch offsets; write after stream closes to avoid concurrent file writes.
       (out.patches ||= []).push([chunkStart+4,payloadSize]);
     }
