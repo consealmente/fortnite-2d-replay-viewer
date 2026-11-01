@@ -90,7 +90,7 @@ public class ReplayReader : Unreal.Core.ReplayReader<FortniteReplay>
             //break;
             case FortInventory inventory:
                 Builder.UpdateInventory(channelIndex, inventory);
-            //    break;
+                break;
             case SpawnMachineRepData spawnMachine:
                 Builder.UpdateRebootVan(channelIndex, spawnMachine);
                 break;
@@ -125,7 +125,7 @@ public class ReplayReader : Unreal.Core.ReplayReader<FortniteReplay>
             //break;
             case FortInventory inventory:
                 Builder.UpdateInventory(channelIndex, inventory);
-            //    break;
+                break;
             //case BroadcastExplosion explosion:
             //    Builder.UpdateExplosion(explosion);
             //    break;
