@@ -89,7 +89,7 @@ function startJob(rawCode) {
 
   const job = { code, status: 'queued', progress: 0, phase: 'Queued', error: null };
   jobs.set(code, job);
-  run(job);
+  job.promise = run(job);
   return job;
 }
 
