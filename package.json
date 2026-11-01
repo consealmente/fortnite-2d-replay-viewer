@@ -6,6 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "build": "bash scripts/build-vercel-bridge.sh",
     "build-bridge": "dotnet build bridge/bridge.csproj -c Release",
     "update-map": "node scripts/update-map.mjs",
     "postinstall": "node scripts/patch-downloader-cache.js"
