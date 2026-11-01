@@ -44,10 +44,12 @@ async function downloadReplay(code,onProgress=()=>{}) {
       const chunkStart=out.logicalPosition||0;
       await write(out,int32(kind));
       await write(out,int32(0));
+      let dataLengthOffset = null;
       if(kind===1) {
         await write(out,int32(item.Time1));
         await write(out,int32(item.Time2));
-        await write(out,int32(Number(links[name].size)));
+        dataLengthOffset=out.logicalPosition;
+        await write(out,int32(0));
         await write(out,int32(item.SizeInBytes));
       } else if(kind===2 || kind===3) {
         await write(out,str(item.Id));
@@ -55,15 +57,17 @@ async function downloadReplay(code,onProgress=()=>{}) {
         await write(out,str(item.Metadata||''));
         await write(out,int32(item.Time1));
         await write(out,int32(item.Time2));
-        await write(out,int32(Number(links[name].size)));
+        dataLengthOffset=out.logicalPosition;
+        await write(out,int32(0));
       }
-      await copyUrl(out,url);
+      const actualDataBytes=await copyUrl(out,url);
       onProgress(Math.round((i+1)/parts.length*100));
       // Flush each chunk before patching its actual payload length.
       if (!out.write(Buffer.alloc(0))) await once(out,'drain');
       const payloadSize=(out.logicalPosition||0)-chunkStart-8;
       // Store patch offsets; write after stream closes to avoid concurrent file writes.
       (out.patches ||= []).push([chunkStart+4,payloadSize]);
+      if (dataLengthOffset !== null) out.patches.push([dataLengthOffset,actualDataBytes]);
     }
     out.end();
     await finished(out);
