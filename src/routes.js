@@ -29,7 +29,7 @@ router.delete('/replays', (_req, res) => {
 });
 
 // Kick off (or re-attach to) a download+parse for a replay code.
-router.post('/replays', (req, res) => {
+router.post('/replays', async (req, res) => {
   if (process.env.PUBLIC_WEBSITE === '1' && getJob(req.body?.code)?.status !== 'done' && activeJobs() >= Number(process.env.MAX_ACTIVE_REPLAYS || 3)) return res.status(503).json({error:'Replay processing is busy. Please try again shortly.'});
   const raw = (req.body && req.body.code) || '';
   if (!normalizeCode(raw)) {
@@ -38,6 +38,15 @@ router.post('/replays', (req, res) => {
     });
   }
   const job = startJob(raw);
+  if (process.env.VERCEL) {
+    // Serverless functions cannot reliably continue a background task after responding.
+    if (job.promise) await job.promise;
+    if (job.status === 'error') return res.status(422).json({ error: job.error });
+    const model = getModel(job.code);
+    if (!model) return res.status(503).json({ error: 'Replay was not available in this function instance.' });
+    res.type('application/json').send(model);
+    return;
+  }
   res.json(jobView(job));
 });
 
