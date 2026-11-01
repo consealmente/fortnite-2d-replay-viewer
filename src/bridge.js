@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 
 const BRIDGE_PROJECT = path.join(__dirname, '..', 'bridge', 'bridge.csproj');
+const BUNDLED_BRIDGE = path.join(__dirname, '..', 'bridge', 'published', 'bridge');
 
 /**
  * Runs the C# bridge against a `.replay` file and resolves with the parsed
@@ -24,8 +25,8 @@ function runBridge(replayPath, onProgress = () => {}) {
     const cleanup = () => fs.rm(outPath, { force: true }, () => {});
 
     const child = spawn(
-      'dotnet',
-      ['run', '--project', BRIDGE_PROJECT, '-c', 'Release', '--no-launch-profile', '--', replayPath, outPath],
+      process.env.VERCEL ? BUNDLED_BRIDGE : 'dotnet',
+      process.env.VERCEL ? [replayPath, outPath] : ['run', '--project', BRIDGE_PROJECT, '-c', 'Release', '--no-launch-profile', '--', replayPath, outPath],
       { windowsHide: true }
     );
 
@@ -75,8 +76,7 @@ function runBridge(replayPath, onProgress = () => {}) {
       if (err.code === 'ENOENT') {
         reject(
           new Error(
-            "Couldn't run `dotnet`. Install the .NET SDK (https://dotnet.microsoft.com/download) " +
-              'and make sure `dotnet` is on your PATH.'
+            process.env.VERCEL ? 'Bundled replay parser executable was not found in the Vercel deployment.' : "Couldn't run `dotnet`. Install the .NET SDK (https://dotnet.microsoft.com/download) and make sure `dotnet` is on your PATH."
           )
         );
       } else {
