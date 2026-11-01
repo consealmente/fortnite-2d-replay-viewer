@@ -5,7 +5,7 @@ const path = require('path');
 const { downloadReplay, REPLAY_DIR } = require('./downloader');
 const { runBridge } = require('./bridge');
 
-const PARSED_DIR = path.join(__dirname, '..', 'data', 'parsed');
+const PARSED_DIR = path.join(process.env.VERCEL ? '/tmp' : path.join(__dirname, '..', 'data'), 'parsed');
 fs.mkdirSync(PARSED_DIR, { recursive: true });
 
 /** In-flight and recently-finished jobs, keyed by normalized code. */
