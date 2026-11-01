@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fortnite 2D Replay Viewer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ---- Home: the board ---- -->
+  <div id="home" class="home">
+    <header class="home-head">
+      <h1>2D Replay Viewer</h1>
+      <button id="clear-cache" class="chip ghost"
+              title="Delete every downloaded replay file. Your board and games stay — each one re-downloads and re-parses next time you open it.">
+        Clear downloads
+      </button>
+      <form id="quick-form" class="quick-form">
+        <input id="quick-code" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Open a replay code…" />
+        <button type="submit" class="chip">Open</button>
+      </form>
+    </header>
+    <div id="home-error" class="home-error" hidden></div>
+    <div id="board-columns" class="board">
+      <div id="add-column" class="add-column">
+        <button id="add-column-btn" class="add-column-btn">+ Add category</button>
+        <p id="add-column-hint" class="add-column-hint" hidden>
+          Group your replays — a scrim block, a tournament, a ranked session —
+          then drop replay codes in and drag them into the order you'll review.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Loading a replay ---- -->
+  <div id="loading" class="loading" hidden>
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <div id="loading-phase" class="phase">Starting…</div>
+      <div class="bar"><div id="loading-bar" class="bar-fill"></div></div>
+      <button id="loading-cancel" class="chip">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ---- Viewer ---- -->
+  <div id="viewer" class="viewer" hidden>
+    <canvas id="stage"></canvas>
+
+    <div id="topbar" class="topbar">
+      <button id="btn-back" class="chip" title="Load another replay">&larr;</button>
+      <div class="match-info">
+        <span id="mi-playlist">&mdash;</span>
+        <span id="mi-alive" class="alive">&mdash;</span>
+        <span id="mi-teams" class="teams"></span>
+      </div>
+      <div class="spacer"></div>
+      <div id="zone-info" class="zone-info">
+        <span id="zi-phase">Zone &mdash;</span>
+        <span id="zi-timer" class="timer">&mdash;</span>
+      </div>
+      <div class="spacer"></div>
+      <button id="btn-stats" class="chip toggle" title="Live game stats">Stats</button>
+      <button id="btn-names" class="chip toggle" title="Show all names">Names</button>
+      <button id="btn-calibrate" class="chip" title="Align the map image">Align</button>
+    </div>
+
+    <div id="killfeed" class="killfeed"></div>
+
+    <div id="stats-panel" class="stats-panel" hidden>
+      <div class="sp-head"><strong>Game stats</strong><button id="stats-close" class="pp-close">&times;</button></div>
+      <div id="sp-body"></div>
+    </div>
+
+    <div id="player-panel" class="player-panel" hidden>
+      <button id="pp-close" class="pp-close">&times;</button>
+      <div id="pp-name" class="pp-name">&mdash;</div>
+      <div id="pp-sub" class="pp-sub">&mdash;</div>
+      <div id="pp-bars"></div>
+      <div id="pp-mats" class="pp-mats-row"></div>
+      <div id="pp-loadout" class="pp-loadout"></div>
+      <div id="pp-stats" class="pp-stats"></div>
+      <div class="pp-btns">
+        <button id="pp-follow" class="pp-follow">Follow</button>
+        <button id="pp-swap" class="pp-follow" title="Switch to a teammate (Tab)" hidden>Teammate &rsaquo;</button>
+      </div>
+    </div>
+
+    <div id="calibrate" class="calibrate" hidden>
+      <div class="cal-row"><strong>Align map</strong> <button id="cal-done" class="chip">Done</button></div>
+      <p>Nudge: drag the map, scroll to scale it.</p>
+      <p><strong>Precise:</strong> select a player, scrub to a moment you can place
+         exactly, then click "Set point" and click their real spot on the map.
+         Do it twice, far apart.</p>
+      <div class="cal-row">
+        <button id="cal-pick" class="chip">Set point 1</button>
+        <span id="cal-pick-status" class="cal-status"></span>
+      </div>
+      <div class="cal-row">
+        <button id="cal-fit" class="chip">Reset view</button>
+        <button id="cal-reset" class="chip">Reset alignment</button>
+      </div>
+      <label class="cal-check"><input type="checkbox" id="cal-invx" /> Flip X</label>
+      <label class="cal-check"><input type="checkbox" id="cal-invy" /> Flip Y</label>
+      <label class="cal-check"><input type="checkbox" id="cal-hide" /> Hide map image</label>
+      <div class="cal-row" style="margin-top:8px">
+        <code id="cal-values" class="cal-values"></code>
+        <button id="cal-copy" class="chip" title="Copy so you can share it back">Copy</button>
+      </div>
+    </div>
+
+    <div id="transport" class="transport">
+      <button id="btn-play" class="play" title="Play / pause (space)">&#9654;</button>
+      <div class="speeds">
+        <button data-sp="0.5" class="sp">0.5&times;</button>
+        <button data-sp="1" class="sp active">1&times;</button>
+        <button data-sp="2" class="sp">2&times;</button>
+        <button data-sp="4" class="sp">4&times;</button>
+        <button data-sp="8" class="sp">8&times;</button>
+      </div>
+      <span id="t-cur" class="t">0:00</span>
+      <div class="scrub-wrap">
+        <input id="scrub" class="scrub" type="range" min="0" max="1000" value="0" step="1" />
+        <div id="scrub-marks" class="scrub-marks" aria-hidden="true"></div>
+      </div>
+      <span id="t-tot" class="t">0:00</span>
+    </div>
+  </div>
+
+  <script src="vendor/sortable.min.js"></script>
+  <script src="app.js"></script>
+  <script src="board.js"></script>
+</body>
+</html>
