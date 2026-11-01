@@ -75,6 +75,12 @@ async function startLoad(rawCode) {
     });
     const j = await readApiJson(r);
     if (!r.ok) throw new Error(j.error || 'request failed');
+    if (!j.status) {
+      // Vercel completes the replay in one request; no cross-instance polling.
+      j.__code = code;
+      enterViewer(j);
+      return;
+    }
 
     // Poll
     for (;;) {
