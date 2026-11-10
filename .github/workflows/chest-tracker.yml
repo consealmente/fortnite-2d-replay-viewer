@@ -1,0 +1,54 @@
+name: Standalone chest tracker
+
+on:
+  pull_request:
+    paths:
+      - 'chest-tracker/**'
+      - 'vendor/parser/**'
+      - '.github/workflows/chest-tracker.yml'
+  push:
+    branches:
+      - 'feature/standalone-chest-tracker'
+    paths:
+      - 'chest-tracker/**'
+      - 'vendor/parser/**'
+      - '.github/workflows/chest-tracker.yml'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test replay selection
+        run: node --test chest-tracker/*.test.js chest-tracker/dashboard/*.test.js
+      - name: Check dashboard JavaScript syntax
+        run: |
+          node --check chest-tracker/dashboard/server.js
+          node --check chest-tracker/dashboard/app.js
+          node --check chest-tracker/dashboard/data.js
+      - name: Build single-player parser
+        run: dotnet build chest-tracker/chest-tracker.csproj -c Release
+
+      - name: Export clean standalone repository and test it
+        shell: pwsh
+        run: |
+          git config --global user.name "ChestLab CI"
+          git config --global user.email "chestlab-ci@example.invalid"
+          & ./chest-tracker/export-standalone.ps1 -Destination "$env:RUNNER_TEMP/chestlab-standalone"
+          Push-Location "$env:RUNNER_TEMP/chestlab-standalone"
+          try {
+            npm install
+            if ($LASTEXITCODE -ne 0) { throw 'Standalone npm install failed' }
+            npm test
+            if ($LASTEXITCODE -ne 0) { throw 'Standalone npm tests failed' }
+            npm run build
+            if ($LASTEXITCODE -ne 0) { throw 'Standalone .NET build failed' }
+          } finally {
+            Pop-Location
+          }

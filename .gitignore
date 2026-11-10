@@ -13,3 +13,8 @@ vendor/parser/src/**/obj/
 **/*.dump
 **/failed-properties
 *.log
+
+# standalone chest tracker local state and build artifacts
+data/chest-tracker/
+chest-tracker/bin/
+chest-tracker/obj/
