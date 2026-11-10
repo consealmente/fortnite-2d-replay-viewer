@@ -56,6 +56,43 @@ Use `--folder "C:\path\to\Demos"` to override the default Windows folder.
 Add `--no-server` if you do not want downloaded replays, or `--epic-id`
 to select a single player explicitly.
 
+## Dashboard (local browser app)
+
+From the repository root, run:
+
+```powershell
+node chest-tracker/dashboard/server.js
+```
+
+Open **http://127.0.0.1:3407** on the same computer.
+
+The dashboard is independent of the 2D viewer. It shows cumulative totals,
+14-day activity bars, per-match counts, the source of each count, and chest
+events. Import a completed `.replay` file by dropping it on the import area.
+Optionally enter the number of chests you observed yourself; the dashboard
+displays the difference, including in the match details.
+
+The dashboard automatically starts the Fortnite Demos watcher when the folder
+exists. It also supports:
+
+```powershell
+node chest-tracker/dashboard/server.js --folder "D:\Fortnite\Demos"
+node chest-tracker/dashboard/server.js --no-watch
+node chest-tracker/dashboard/server.js --no-server
+node chest-tracker/dashboard/server.js --epic-id YOUR_EPIC_ID
+```
+
+The local dashboard binds only to **127.0.0.1** and runs on port **3407**.
+Browser uploads (maximum 300 MB) are copied to a temporary local folder,
+parsed, then removed. JSON match summaries remain in
+`data/chest-tracker/imports.json`; watched results remain in `history.json`.
+Replays with a matching match ID are deduplicated in the displayed totals.
+No public deployment or authentication is configured.
+
+**The parser's actual chest accuracy is still unverified:** one real current
+Fortnite replay plus a manually observed count is the next required test.
+All current automated checks use synthetic data and/or verify compilation.
+
 ## How it works
 
 1. Read the local replay and extract `GameData.GameSessionId`.
