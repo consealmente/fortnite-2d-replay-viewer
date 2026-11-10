@@ -2,6 +2,7 @@ using System.Text.Json;
 using FortniteReplayReader;
 using FortniteReplayReader.Models;
 using FortniteReplayReader.Models.NetFieldExports;
+using Unreal.Core;
 using Unreal.Core.Attributes;
 using Unreal.Core.Contracts;
 using Unreal.Core.Models;
