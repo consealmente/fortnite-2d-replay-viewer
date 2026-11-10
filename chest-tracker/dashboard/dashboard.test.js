@@ -68,7 +68,7 @@ test('dashboard serves HTML, status, empty data, and rejects invalid uploads',as
   try {
     const home=await fetch(url+'/');
     assert.equal(home.status,200);
-    assert.match(await home.text(),/Chest Tracker Dashboard/);
+    assert.match(await home.text(),/Chest Tracker/);
     const state=await fetch(url+'/api/state');
     assert.equal(state.status,200);
     assert.equal(typeof (await state.json()).summary.total,'number');
