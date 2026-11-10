@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#090e1a"/>
+  <title>ChestLab — Fortnite Replay Analytics</title>
+  <link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-symbol" aria-hidden="true">
+          <svg viewBox="0 0 40 40" fill="none"><path d="M7 17h26v16H7V17Zm2-4 3-7h16l3 7H9Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M17 18v15m6-15v15m-6-7h6M6 17h28" stroke="currentColor" stroke-width="2.5"/></svg>
+        </div>
+        <div><strong>CHESTLAB</strong><small>FORTNITE ANALYTICS</small></div>
+      </div>
+      <div class="sidebar-label">WORKSPACE</div>
+      <a class="nav active" href="#overview"><span class="nav-ico">◫</span> Overview</a>
+      <a class="nav" href="#import"><span class="nav-ico">⇧</span> Import replay</a>
+      <a class="nav" href="#history"><span class="nav-ico">▤</span> Match history</a>
+      <div class="sidebar-foot">
+        <span class="mini-dot"></span><span id="sidebar-status">Checking replay folder</span>
+        <small>Local-only dashboard · v0.1</small>
+      </div>
+    </aside>
+
+    <main class="main" id="overview">
+      <header class="topbar">
+        <div class="breadcrumb">Workspace <span>/</span> Replay analytics</div>
+        <div class="top-actions">
+          <span class="date-label" id="today-label"></span>
+          <a href="/api/export.csv" class="outline-btn" download>↓ Export CSV</a>
+        </div>
+      </header>
+
+      <section class="intro">
+        <div>
+          <div class="eyebrow">MATCH INTELLIGENCE <span>·</span> SINGLE PLAYER</div>
+          <h1>Chest Tracker <span class="accent">Dashboard</span></h1>
+          <p>Every chest. Every match. One clear view of your farming progress.</p>
+        </div>
+        <div class="live-indicator"><span class="live-dot"></span><span id="watcher-status">Connecting</span></div>
+      </section>
+
+      <section class="metric-grid" aria-label="Chest tracking statistics">
+        <article class="metric"><div class="metric-top"><span>Total chests opened</span><span class="metric-icon">▣</span></div><div class="metric-value" id="total">—</div><div class="metric-sub">Across all tracked matches</div><div class="metric-accent cyan"></div></article>
+        <article class="metric"><div class="metric-top"><span>Chests today</span><span class="metric-icon">◷</span></div><div class="metric-value" id="today">—</div><div class="metric-sub">Since local midnight</div><div class="metric-accent purple"></div></article>
+        <article class="metric"><div class="metric-top"><span>Matches tracked</span><span class="metric-icon">◇</span></div><div class="metric-value" id="matches">—</div><div class="metric-sub"><span id="unknown-label">Verified player counts</span></div><div class="metric-accent blue"></div></article>
+        <article class="metric"><div class="metric-top"><span>Best match</span><span class="metric-icon">✧</span></div><div class="metric-value" id="best">—</div><div class="metric-sub">Average <strong id="average">—</strong> per match</div><div class="metric-accent amber"></div></article>
+      </section>
+
+      <section class="analysis-row">
+        <article class="panel chart-panel">
+          <div class="panel-title-row">
+            <div><div class="panel-kicker">PERFORMANCE</div><h2>Chest activity</h2></div>
+            <span class="small-pill">Last 14 days</span>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-grid"><span>HIGH</span><span>MED</span><span>LOW</span></div>
+            <div class="bars" id="activity-chart" aria-label="Chest totals by day"></div>
+          </div>
+          <div class="chart-footer"><span class="legend-dot"></span> Opened chests <span class="chart-caption">Based on processed replays</span></div>
+        </article>
+        <article class="panel importer" id="import">
+          <div class="panel-title-row"><div><div class="panel-kicker">VALIDATION LAB</div><h2>Analyze a replay</h2></div><span class="small-pill beta">BETA</span></div>
+          <p class="import-intro">Drop in a finished <code>.replay</code> file to measure chest openings and test our parser against your own count.</p>
+          <div class="drop-zone" id="drop-zone" tabindex="0" role="button" aria-label="Choose a replay file">
+            <div class="upload-graphic">⇧</div>
+            <strong id="file-label">Choose a file or drop it here</strong>
+            <span>Fortnite .replay · up to 300 MB</span>
+            <input type="file" id="file-input" accept=".replay" hidden/>
+          </div>
+          <div class="import-fields">
+            <label for="expected">How many chests did you open? <span>(optional)</span></label>
+            <input type="number" id="expected" min="0" max="99999" placeholder="e.g. 27"/>
+          </div>
+          <label class="toggle-row"><input type="checkbox" id="server-lookup" checked/><span>Try downloading the server-side replay</span></label>
+          <button class="primary-btn" id="scan-btn" disabled>Analyze replay <span>→</span></button>
+          <div class="scan-status" id="scan-status" role="status" aria-live="polite"></div>
+        </article>
+      </section>
+
+      <section class="panel match-panel" id="history">
+        <div class="panel-title-row match-head">
+          <div><div class="panel-kicker">REPLAY ARCHIVE</div><h2>Match history <span class="count-pill" id="history-count">0</span></h2></div>
+          <div class="match-tools"><input type="search" id="search" placeholder="Search matches…" aria-label="Search matches"/>
+          <select id="source-filter" aria-label="Filter by replay source"><option value="all">All sources</option><option value="local">Local</option><option value="server">Server</option></select></div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>MATCH</th><th>PLAYER</th><th>OPENED</th><th>REPLAY SOURCE</th><th>VALIDATION</th><th></th></tr></thead>
+            <tbody id="match-rows"><tr><td class="muted" colspan="6">Loading match history…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="table-bottom"><span id="history-meta">Latest matches appear automatically.</span><span>Click a row for chest events</span></div>
+      </section>
+      <footer>CHESTLAB / LOCAL REPLAY PROCESSOR <span>Counts are experimental until verified against a real match.</span></footer>
+    </main>
+  </div>
+
+  <dialog id="match-dialog">
+    <div class="dialog-head"><div><div class="panel-kicker">MATCH DETAIL</div><h2 id="detail-title">Replay</h2></div><button class="close" id="close-dialog" aria-label="Close">×</button></div>
+    <div class="detail-metrics" id="detail-metrics"></div>
+    <div id="detail-validation" class="detail-validation"></div>
+    <h3>Detected chest events</h3>
+    <div id="detail-events" class="event-list"></div>
+  </dialog>
+  <script src="/app.js" defer></script>
+</body>
+</html>
