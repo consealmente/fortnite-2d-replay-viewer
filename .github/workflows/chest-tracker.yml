@@ -26,6 +26,6 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Test replay selection
-        run: node --test chest-tracker/result.test.js
+        run: node --test chest-tracker/*.test.js
       - name: Build single-player parser
         run: dotnet build chest-tracker/chest-tracker.csproj -c Release
