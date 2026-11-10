@@ -102,6 +102,12 @@ async function main() {
           playerEpicId: result.playerEpicId,
           chestCount: result.chestCount,
           source: result.source,
+          playerName: result.playerName,
+          localChestCount: result.localChestCount,
+          serverChestCount: result.serverChestCount,
+          serverAttempt: result.serverAttempt,
+          chestEvents: result.chests,
+          warnings: result.warnings,
           error: null
         };
         const total = totals(history);
