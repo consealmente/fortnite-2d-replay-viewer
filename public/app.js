@@ -23,7 +23,7 @@ const fmtTime = (s) => {
    changes the map, re-run Align > 2-point fit (points far apart in BOTH x and
    y) and paste the numbers here. NOTE: the storm `Radius` value is on a
    different scale than positions -- don't derive map scale from it. */
-const MAP_SRC = 'maps/hera.png';
+const MAP_SRC = '/maps/br-43.webp';
 const MAP_BOUNDS = { minX: -141696, maxX: 159672, minY: -149469, maxY: 150677 };
 
 /* Death-cause codes -> short labels (EDeathCause). Best-effort; unknowns show
