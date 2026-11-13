@@ -61,11 +61,19 @@
         <span id="zi-timer" class="timer">&mdash;</span>
       </div>
       <div class="spacer"></div>
+      <button id="btn-wkey" class="chip toggle" title="Review suspected pushes">W-Key</button>
       <button id="btn-stats" class="chip toggle" title="Live game stats">Stats</button>
       <button id="btn-names" class="chip toggle" title="Show all names">Names</button>
       <button id="btn-calibrate" class="chip" title="Align the map image">Align</button>
     </div>
 
+    <section id="wk-panel" class="wk-panel" aria-label="Suspected pushes" hidden>
+      <div class="sp-head"><strong id="wk-count">Suspected pushes</strong><button id="wk-close" class="pp-close" aria-label="Close suspected pushes">&times;</button></div>
+      <p>Movement-based review flags, not confirmed violations. Check earlier damage, ongoing fights and the VOD.</p>
+      <label>Sensitivity <select id="wk-level"><option value="normal">Normal — straight pushes</option><option value="strict">Strict — no recorded shots</option><option value="loose">Loose — any close approach</option></select></label>
+      <p>Click a flag to jump before the approach and follow the attacker. Press Play to watch.</p>
+      <div id="wk-list"></div><p id="wk-empty" hidden>No candidates at this sensitivity. Missing data can hide pushes; this is not a clearance.</p>
+    </section>
     <div id="killfeed" class="killfeed"></div>
 
     <div id="stats-panel" class="stats-panel" hidden>
@@ -130,6 +138,7 @@
 
   <script src="vendor/sortable.min.js"></script>
   <script src="app.js"></script>
+  <script src="wkey.js"></script>
   <script src="board.js"></script>
 </body>
 </html>

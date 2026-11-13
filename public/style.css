@@ -240,3 +240,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .loadout-slot small { color: #a9b2c5; font-size: 9px; }
 .loadout-slot.equipped { border-color: #f5c452; background: #39321e; }
 .loadout-held { margin-top: 7px; font-size: 11px; color: #c7cedd; }
+
+/* Suspected push review */
+.wk-panel { position:absolute; z-index:30; top:70px; right:16px; width:min(420px, calc(100vw - 32px)); max-height:calc(100vh - 170px); overflow:auto; padding:16px; border:1px solid #52607a; border-radius:12px; background:#101827f5; color:#eef3ff; box-shadow:0 10px 35px #0008; }
+.wk-panel[hidden] { display:none; }
+.wk-panel p { font-size:12px; color:#b8c6dd; line-height:1.5; }
+.wk-panel select { max-width:100%; margin:6px 0; padding:8px; background:#202e45; color:#fff; border:1px solid #64758e; border-radius:6px; }
+.wk-event { display:block; width:100%; text-align:left; padding:12px; margin:8px 0; border:1px solid #43516b; border-radius:8px; background:#1a273c; color:#f4f7ff; cursor:pointer; }
+.wk-event span { display:block; margin-top:6px; font-size:12px; line-height:1.5; color:#bdcae1; }
+.wk-event:hover, .wk-event.active { border-color:#9faeff; background:#273956; }
