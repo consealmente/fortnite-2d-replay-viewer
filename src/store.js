@@ -76,12 +76,13 @@ function startJob(rawCode) {
     } catch (_) {
       /* corrupt cache -- fall through and re-parse */
     }
-    if (meta) {
+    if (meta?.schemaVersion >= 2) {
       const done = { code, status: 'done', progress: 100, phase: 'Ready', meta };
       jobs.set(code, done);
       return done;
     }
     fs.rmSync(modelPath(code), { force: true });
+    jobs.delete(code);
   }
 
   const existing = jobs.get(code);

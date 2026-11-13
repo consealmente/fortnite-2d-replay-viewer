@@ -279,9 +279,19 @@ function frameFit() {
 /* ---------------------------------------------------------------------------
    Storm geometry at a given match-clock time
    ------------------------------------------------------------------------- */
+function firstZoneAnnouncement() {
+  const first = model.storm[0];
+  if (Number.isFinite(first?.announcedAt)) return first.announcedAt;
+  const start = model.meta?.safeZonesStartTime;
+  return Number.isFinite(start) && start > 0 ? start : null;
+}
+function isPrezone(t) {
+  const announcement = firstZoneAnnouncement();
+  return announcement != null && t < announcement;
+}
 function stormAt(t) {
   const ph = model.storm;
-  if (!ph.length) return null;
+  if (!ph.length || isPrezone(t)) return null;
 
   // Current (enforced) circle: piecewise between keyframes.
   let cur = { x: ph[0].center[0], y: ph[0].center[1], r: ph[0].radius };
@@ -833,6 +843,12 @@ function updateHud() {
     timerEl.className = 'timer' + (storm.shrinking ? ' shrinking' : storm.timerTo < 20 ? ' warn' : '');
   }
 
+  if (!storm) {
+    $('zi-phase').textContent = isPrezone(play.t) ? 'Zone 0 · Prezone' : 'Zone —';
+    $('zi-timer').textContent = isPrezone(play.t) ? fmtTime(firstZoneAnnouncement() - play.t) : '—';
+    $('zi-timer').className = 'timer';
+  }
+
   // kill feed: show events up to now, keep last 6
   renderFeed();
   if (selected) renderPanel();
@@ -1151,7 +1167,7 @@ function renderStats() {
   const c = zoneCensus(t);
   const s = stormAt(t);
   const zonePct = c.total ? (c.inZone / c.total) * 100 : 100;
-  const zoneLabel = s ? (s.shrinking ? `Zone ${s.phaseNo} closing` : `Zone ${s.phaseNo}`) : 'Zone —';
+  const zoneLabel = s ? (s.shrinking ? `Zone ${s.phaseNo} closing` : `Zone ${s.phaseNo}`) : isPrezone(t) ? 'Zone 0 · Prezone' : 'Zone —';
   const zoneTimer = s && s.timerTo != null ? fmtTime(s.timerTo) : '—';
   $('sp-body').innerHTML =
     `<div class="sp-stat"><span>In the zone</span><b>${c.inZone}</b></div>` +

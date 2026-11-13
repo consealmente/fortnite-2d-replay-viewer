@@ -158,6 +158,7 @@ class ViewerReader : ReplayReader
 class PhaseOut
 {
     public int phase { get; set; }
+    public double? announcedAt { get; set; }
     public double radius { get; set; }
     public double[] center { get; set; }
     public double nextRadius { get; set; }
@@ -377,6 +378,7 @@ static class ViewerModel
             phaseList.Add(new PhaseOut
             {
                 phase = i + 1,
+                announcedAt = Math.Round(a.DemoTime + clockOffset, 2),
                 radius = Math.Round(radius),
                 center = center,
                 nextRadius = Math.Round(a.NextRadius),
@@ -458,6 +460,8 @@ static class ViewerModel
         {
             meta = new
             {
+                schemaVersion = 2,
+                safeZonesStartTime = replay.GameData.SafeZonesStartTime,
                 friendlyName = replay.Info.FriendlyName,
                 playlist = replay.GameData.CurrentPlaylist,
                 branch = replay.Header.Branch,
