@@ -119,9 +119,12 @@ function beforeFifthZone(t) {
 }
 function candidates(level) {
   return getWkeys().filter(w =>
-    beforeFifthZone(w.tc) && beforeFifthZone(w.e.t) &&
+    !w.e.downed && beforeFifthZone(w.tc) && beforeFifthZone(w.e.t) &&
     (level === 'loose' || w.rush) &&
     (level !== 'strict' || w.fired === false));
+}
+function teamMembers(p) {
+  return model.isSolo || p.team == null ? [p] : model.roster.filter(q => q.team === p.team);
 }
 function jump(w) {
   play.t = clamp(w.tc - WK.RUN_S - 1, model.time.start, model.time.end);
@@ -154,7 +157,29 @@ function renderFlags() {
     ].filter(Boolean).join(' · ');
     b.append(title, detail); b.title = 'Jump to six seconds before close range and follow the attacker';
     b.onclick = () => { jump(w); box.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b)); };
-    box.append(b);
+    const card = document.createElement('div');
+    card.append(b);
+    for (const [label, player] of [['Attacking team', w.A], ['Target team', w.B]]) {
+      const roster = document.createElement('div');
+      roster.className = 'wk-roster';
+      const heading = document.createElement('strong'); heading.textContent = label;
+      roster.append(heading);
+      for (const member of teamMembers(player)) {
+        const memberButton = document.createElement('button');
+        memberButton.type = 'button'; memberButton.className = 'chip';
+        memberButton.textContent = member.name;
+        memberButton.title = 'Follow this teammate at the current replay time';
+        memberButton.onclick = () => {
+          selectPlayer(member); play.follow = member; syncFollowBtn();
+          const pos = posAt(member, play.t);
+          if (pos) { cam.x = pos.x; cam.y = pos.y; }
+          updateHud();
+        };
+        roster.append(memberButton);
+      }
+      card.append(roster);
+    }
+    box.append(card);
   }
 }
 $('btn-wkey').onclick = () => {

@@ -17,7 +17,21 @@ if(process.env.REPLAY_FIXTURE){
  assert.equal(w.document.querySelectorAll('.wk-event').length,0);
  console.log(`Real replay: ${count} candidates; jump/follow and missing-shot exclusion passed`);
 }
-vm.runInContext(" function fixture({same=false,air=false,rangeKnock=false,solo=false,hp=200,shots=[]}={}) {\n const track=[];for(let t=0;t<=25;t+=.25)track.push([t,t<15?0:Math.min(3500,(t-15)*700),0,0,air?2:0,0]);\n const A={id:1,name:'Attacker',team:1,track,hp:[[0,100,100]],shots};\n const B={id:2,name:'Target',team:same?1:2,track:track.map(p=>[p[0],4000,0,0,0,0]),hp:[[18,hp,0]]};\n return {meta:{playlist:solo?'Solo':'Duos',clockOffset:0},time:{start:0,end:25},players:[A,B],storm:[{phase:1,startShrink:26,finishShrink:30,center:[0,0],nextCenter:[0,0],radius:10000,nextRadius:5000}],events:[...(rangeKnock?[{t:10,killer:1,victim:2,downed:true}]:[]),{t:21,killer:1,victim:2,downed:true}]};\n }\n function count(opts,level='normal'){enterViewer(fixture(opts));setPlaying(false);model.isSolo=!!opts?.solo;$('wk-level').value=level;$('btn-wkey').click();return $('wk-list').children.length;}\n const good=count(); const row=$('wk-list').firstChild;row.click();const jumpOK=play.t<20 && play.follow.id===1&&!play.playing;\n globalThis.cases = {good,jumpOK,same:count({same:true}),air:count({air:true}),range:count({rangeKnock:true}),lowHP:count({solo:true,hp:35}),strict:count({},'strict'),fired:count({shots:[18]},'strict')};\n",ctx);
+vm.runInContext(" function fixture({same=false,air=false,rangeKnock=false,solo=false,hp=200,shots=[]}={}) {\n const track=[];for(let t=0;t<=25;t+=.25)track.push([t,t<15?0:Math.min(3500,(t-15)*700),0,0,air?2:0,0]);\n const A={id:1,name:'Attacker',team:1,track,hp:[[0,100,100]],shots};\n const B={id:2,name:'Target',team:same?1:2,track:track.map(p=>[p[0],4000,0,0,0,0]),hp:[[18,hp,0]]};\n return {meta:{playlist:solo?'Solo':'Duos',clockOffset:0},time:{start:0,end:25},players:[A,B],storm:[{phase:1,startShrink:26,finishShrink:30,center:[0,0],nextCenter:[0,0],radius:10000,nextRadius:5000}],events:[...(rangeKnock?[{t:10,killer:1,victim:2,downed:true}]:[]),{t:21,killer:1,victim:2,downed:false}]};\n }\n function count(opts,level='normal'){enterViewer(fixture(opts));setPlaying(false);model.isSolo=!!opts?.solo;$('wk-level').value=level;$('btn-wkey').click();return $('wk-list').children.length;}\n const good=count(); const row=$('wk-list').querySelector('.wk-event');row.click();const jumpOK=play.t<20 && play.follow.id===1&&!play.playing;\n globalThis.cases = {good,jumpOK,same:count({same:true}),air:count({air:true}),range:count({rangeKnock:true}),lowHP:count({solo:true,hp:35}),strict:count({},'strict'),fired:count({shots:[18]},'strict')};\n",ctx);
 assert.deepEqual(JSON.parse(JSON.stringify(w.cases)),{good:1,jumpOK:true,same:0,air:0,range:0,lowHP:0,strict:1,fired:0});
 console.log('DOM integration: straight push, same-team, airborne, prior knock, low health, firing and replay reset passed');
+vm.runInContext(`
+const teamFixture = fixture();
+teamFixture.players.push({...teamFixture.players[0],id:3,name:'Teammate'});
+teamFixture.events.unshift({t:20,killer:1,victim:2,downed:true});
+enterViewer(teamFixture);setPlaying(false);model.isSolo=false;
+$('wk-level').value='loose';$('btn-wkey').click();
+globalThis.teamResult = {flags:document.querySelectorAll('.wk-event').length, members:document.querySelectorAll('.wk-roster button').length};
+document.querySelectorAll('.wk-roster button')[1].click();
+globalThis.followedMate = play.follow.id;
+`,ctx);
+assert.equal(w.teamResult.flags,1);
+assert.equal(w.teamResult.members,3);
+assert.equal(w.followedMate,3);
+console.log('Knock plus elimination produces one flag; both team rosters and teammate follow passed');
 dom.window.close();

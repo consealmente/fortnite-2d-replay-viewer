@@ -249,3 +249,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .wk-event { display:block; width:100%; text-align:left; padding:12px; margin:8px 0; border:1px solid #43516b; border-radius:8px; background:#1a273c; color:#f4f7ff; cursor:pointer; }
 .wk-event span { display:block; margin-top:6px; font-size:12px; line-height:1.5; color:#bdcae1; }
 .wk-event:hover, .wk-event.active { border-color:#9faeff; background:#273956; }
+
+.wk-roster { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 14px; }
+.wk-roster strong { width:100%; font-size:12px; color:#bdcae1; }
