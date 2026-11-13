@@ -51,6 +51,20 @@ function hpLeftAt(B, t) {
 
 /** Every event that passes the loose rule, tagged with whether it was a rush and whether A fired.
     Solos also carry `hpLeft` (the target's health + shield when A got close; `unknown` if not recorded). */
+function sameTeam(a, b) {
+  return !!a && !!b && (a.id === b.id || (!model.isSolo && a.team != null && a.team === b.team));
+}
+function teamKnockBefore(A, B, tc) {
+  // A revive or elimination ends a knock's active state. Old resolved knocks
+  // must not excuse a later approach.
+  const down = new Map();
+  for (const e of [...model.events].sort((a,b) => a.t-b.t)) {
+    if (e.t >= tc) break;
+    if (e.revived || !e.downed) down.delete(e.victim);
+    else down.set(e.victim, e);
+  }
+  return [...down.values()].some(e => sameTeam(model.byId.get(e.killer), A) && sameTeam(model.byId.get(e.victim), B));
+}
 function getWkeys() {
   if (model.wk) return model.wk;
   const solo = model.isSolo;
@@ -73,8 +87,8 @@ function getWkeys() {
     if (solo) {
       hpLeft = hpLeftAt(B, tc);
       if (hpLeft != null && hpLeft <= hpAllowed) continue; // already dealt 160+ -> allowed to close in
-    } else if (model.kills.some((k) => k.downed && k.killer === A.id && k.victim === B.id && k.t < tc)) {
-      continue; // knocked them from range before closing in -> not a w-key
+    } else if (teamKnockBefore(A, B, tc)) {
+      continue;
     }
 
     const run = ranAtThem(A, B, tc);
@@ -127,6 +141,7 @@ function teamMembers(p) {
   return model.isSolo || p.team == null ? [p] : model.roster.filter(q => q.team === p.team);
 }
 function jump(w) {
+  reviewIds = new Set([...teamMembers(w.A), ...teamMembers(w.B)].map(p => p.id));
   play.t = clamp(w.tc - WK.RUN_S - 1, model.time.start, model.time.end);
   setPlaying(false);
   selectPlayer(w.A);
@@ -185,12 +200,13 @@ function renderFlags() {
 $('btn-wkey').onclick = () => {
   const panel = $('wk-panel'); panel.hidden = !panel.hidden;
   $('btn-wkey').classList.toggle('active', !panel.hidden);
-  if (!panel.hidden) renderFlags();
+  if (!panel.hidden) renderFlags(); else reviewIds = null;
 };
-$('wk-close').onclick = () => { $('wk-panel').hidden = true; $('btn-wkey').classList.remove('active'); };
+$('wk-close').onclick = () => { reviewIds = null; $('wk-panel').hidden = true; $('btn-wkey').classList.remove('active'); };
 $('wk-level').onchange = renderFlags;
 const originalEnterViewer = enterViewer;
 enterViewer = function(m) {
+  reviewIds = null;
   prepare(m);
   $('wk-panel').hidden = true;
   $('btn-wkey').classList.remove('active');

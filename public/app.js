@@ -35,6 +35,7 @@ const DEATH_CAUSE = {
 };
 
 let model = null;
+let reviewIds = null;
 
 // Parser times include clockOffset; Fortnite's replay UI displays time minus that offset.
 function replayClockStart(m = model) {
@@ -605,6 +606,7 @@ function render() {
   const storm = stormAt(play.t);
   if (storm) drawStorm(storm);
   drawBus();
+  drawReviewTrails();
   drawPlayers();
   drawDeaths();
 }
@@ -685,6 +687,25 @@ function teamColor(team) {
   return c;
 }
 
+function drawReviewTrails() {
+  if (!reviewIds) return;
+  ctx.save(); ctx.lineWidth = 2; ctx.globalAlpha = 0.75;
+  for (const p of model.roster) {
+    if (!reviewIds.has(p.id)) continue;
+    ctx.strokeStyle = teamColor(p.team);
+    ctx.beginPath(); let previous = null;
+    for (let t = Math.max(p.spawnT, play.t - 15); t <= Math.min(play.t, p.goneT); t += 0.5) {
+      const pos = posAt(p, t);
+      if (!pos) { previous = null; continue; }
+      const [x,y] = worldToScreen(pos.x,pos.y);
+      if (!previous || Math.hypot(pos.x-previous.x,pos.y-previous.y)>10000) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+      previous = pos;
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawPlayers() {
   const t = play.t;
   const selTeam = selected ? selected.team : null;
@@ -695,6 +716,10 @@ function drawPlayers() {
     const [sx, sy] = worldToScreen(pos.x, pos.y);
     if (sx < -20 || sx > W + 20 || sy < -20 || sy > H + 20) continue;
 
+    const reviewing = reviewIds?.has(p.id);
+    ctx.save();
+    const opacity = reviewIds && !reviewing ? 0.15 : 1;
+    ctx.globalAlpha = opacity;
     const sel = p === selected;
     const hov = p === hovered;
     const mate = !sel && selTeam != null && p.team === selTeam;
@@ -706,7 +731,7 @@ function drawPlayers() {
     const col = teamColor(p.team);
 
     // selected / teammate halo (a ring, drawn before rotating)
-    if (sel || mate) {
+    if (sel || mate || reviewing) {
       ctx.beginPath();
       ctx.arc(sx, sy, r * 2 + (sel ? 3 : 1.5), 0, Math.PI * 2);
       ctx.strokeStyle = sel ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)';
@@ -722,10 +747,10 @@ function drawPlayers() {
     ctx.shadowColor = 'rgba(0,0,0,0.55)';
     ctx.shadowBlur = 3;
     tracePlayerMarker(r);
-    ctx.globalAlpha = airborne ? 0.5 : 1; // airborne reads faint
+    ctx.globalAlpha = (airborne ? 0.5 : 1) * opacity; // airborne reads faint
     ctx.fillStyle = col;
     ctx.fill();
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = opacity;
     ctx.shadowBlur = 0;
 
     if (dbno) {
@@ -741,7 +766,7 @@ function drawPlayers() {
     ctx.stroke();
     ctx.restore();
 
-    const showName = sel || hov || mate || (ui.names && cam.zoom > 0.006);
+    const showName = reviewing || sel || hov || mate || (ui.names && cam.zoom > 0.006);
     if (showName) {
       const ny = sy - r * 2 - 6;
       ctx.font = sel ? '600 12px system-ui' : '11px system-ui';
@@ -752,6 +777,7 @@ function drawPlayers() {
       ctx.fillStyle = sel ? '#fff' : mate ? '#e7ecf3' : 'rgba(231,236,243,0.85)';
       ctx.fillText(p.name, sx, ny);
     }
+    ctx.restore();
   }
 }
 

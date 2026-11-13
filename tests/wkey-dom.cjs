@@ -34,4 +34,24 @@ assert.equal(w.teamResult.flags,1);
 assert.equal(w.teamResult.members,3);
 assert.equal(w.followedMate,3);
 console.log('Knock plus elimination produces one flag; both team rosters and teammate follow passed');
+vm.runInContext(`
+function teamCase(revived) {
+ const m=fixture();m.players.push({...m.players[0],id:3,name:'Mate'});
+ m.events.unshift({t:10,killer:3,victim:2,downed:true});
+ if(revived)m.events.push({t:12,victim:2,revived:true});
+ enterViewer(m);setPlaying(false);model.isSolo=false;
+ $('wk-level').value='normal';$('btn-wkey').click();
+ return document.querySelectorAll('.wk-event').length;
+}
+globalThis.teamKnocks={active:teamCase(false),revived:teamCase(true)};
+document.querySelector('.wk-event').click();
+globalThis.highlighted=reviewIds.size;
+drawReviewTrails();drawPlayers();
+$('wk-close').click();globalThis.cleared=reviewIds===null;
+`,ctx);
+assert.equal(w.teamKnocks.active,0);
+assert.equal(w.teamKnocks.revived,1);
+assert.equal(w.highlighted,3);
+assert.equal(w.cleared,true);
+console.log('Team knock exception, revive reset, review highlight/trail rendering and close cleanup passed');
 dom.window.close();
