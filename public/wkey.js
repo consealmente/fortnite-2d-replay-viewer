@@ -108,8 +108,18 @@ function prepare(m) {
   }
   m.wk = null;
 }
+// Zone 5 opens when Zone 4 finishes closing, matching the viewer HUD.
+// Only flag events whose recorded storm phase is known to be before Zone 5.
+function beforeFifthZone(t) {
+  const phases = [...(model.storm || [])].filter(p =>
+    Number.isFinite(p.phase) && Number.isFinite(p.finishShrink))
+    .sort((a, b) => a.finishShrink - b.finishShrink);
+  const current = phases.find(p => t < p.finishShrink);
+  return !!current && current.phase >= 1 && current.phase < 5;
+}
 function candidates(level) {
   return getWkeys().filter(w =>
+    beforeFifthZone(w.tc) && beforeFifthZone(w.e.t) &&
     (level === 'loose' || w.rush) &&
     (level !== 'strict' || w.fired === false));
 }
