@@ -35,6 +35,13 @@ const DEATH_CAUSE = {
 };
 
 let model = null;
+
+// Parser times include clockOffset; Fortnite's replay UI displays time minus that offset.
+function replayClockStart(m = model) {
+  const offset = m?.meta?.clockOffset;
+  return Number.isFinite(offset) ? offset : m.time.start;
+}
+
 let mapImg = new Image();
 let mapReady = false;
 
@@ -140,9 +147,9 @@ let hovered = null;
 let calibrating = false;
 const ui = { names: false };
 
-// v3: new (larger, sharper) map image + recalibrated default -- ignore older
-// saved values. v4: calibration gained separate x/y scales (wppuX, wppuY).
-function calKey() { return 'fn2d.cal.v4.' + (model?.meta?.build || 'default'); }
+// v5 isolates saved alignment by map asset and build; ignore calibration made
+// against the previous background, even when the replay build is the same.
+function calKey() { return 'fn2d.cal.v5.' + MAP_SRC + '.' + (model?.meta?.build || 'default'); }
 function loadCal() {
   let c = null;
   try { c = JSON.parse(localStorage.getItem(calKey()) || 'null'); } catch {}
@@ -210,8 +217,9 @@ function enterViewer(m) {
   selected = null;
 
   $('mi-playlist').textContent = prettyPlaylist(m.meta.playlist);
-  $('t-tot').textContent = fmtTime(m.time.end - m.time.start);
-  $('scrub').max = String(Math.round((m.time.end - m.time.start) * 10));
+  $('t-tot').textContent = fmtTime(m.time.end - replayClockStart(m));
+  $('scrub').min = String(Math.ceil((m.time.start - replayClockStart(m)) * 10));
+  $('scrub').max = String(Math.floor((m.time.end - replayClockStart(m)) * 10));
 
   model.bus = computeBus(m);
   renderTimelineMarks();
@@ -785,7 +793,7 @@ function drawDeaths() {
    HUD
    ------------------------------------------------------------------------- */
 function updateHud() {
-  const rel = play.t - model.time.start;
+  const rel = play.t - replayClockStart();
   $('t-cur').textContent = fmtTime(rel);
   if (!scrubbing) $('scrub').value = String(Math.round(rel * 10));
   $('mi-alive').textContent = String(aliveCount(play.t));
@@ -906,7 +914,7 @@ function renderPanel() {
     `<div>Dmg taken <b>${Math.round(dmg.total)}</b></div>` +
     `<div>Storm dmg <b>${Math.round(dmg.storm)}</b></div>` +
     (h ? `<div>Health <b>${Math.round(h.hp)}</b></div>` : '') +
-    (dead && p.death ? `<div>Died <b>${fmtTime(p.death.t - model.time.start)}</b></div>` : '');
+    (dead && p.death ? `<div>Died <b>${fmtTime(p.death.t - replayClockStart())}</b></div>` : '');
   $('pp-follow').classList.toggle('active', play.follow === p);
 }
 
@@ -1070,7 +1078,7 @@ document.querySelectorAll('.sp').forEach((b) => {
 let scrubbing = false;
 $('scrub').addEventListener('input', (e) => {
   scrubbing = true;
-  play.t = model.time.start + parseInt(e.target.value, 10) / 10;
+  play.t = clamp(replayClockStart() + parseInt(e.target.value, 10) / 10, model.time.start, model.time.end);
 });
 $('scrub').addEventListener('change', () => { scrubbing = false; });
 
